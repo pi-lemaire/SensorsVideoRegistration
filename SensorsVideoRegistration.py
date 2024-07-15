@@ -404,13 +404,45 @@ class StabilizerHomographyTrajCorrected:
         # revert to the original image size
         warpMat = applyScalingToPerspectiveTransformMat(appliedTransform, 1.0 / self.resizeFactor)
         
-        # UNCOMMENT THE LINE BELOW TO SEE THE RESULT WITHOUT CORRECTING THE LONG-TERM DRIFTING
-        #warpMat = applyScalingToPerspectiveTransformMat(self.TrajConsecOnly.getResultingMatrix(), 1.0 / self.resizeFactor)
+        # UNCOMMENT THE LINE BELOW TO SEE THE SHORT-TERM TRAJECTORY INVERSION WITHOUT CORRECTING THE DRIFTING
+        # DIFFERENCES ARE VISIBLE MOSTLY ON LENGTHY VIDEOS
+        # warpMat = applyScalingToPerspectiveTransformMat(self.TrajConsecOnly.getResultingMatrix(), 1.0 / self.resizeFactor)
 
         self.currVidPos += 1
 
         return warpMat, returnFlag
     
     
+
+if __name__ == '__main__':
     
-    
+    # load the video
+    video = cv2.VideoCapture( 'example_videos/mocopo.mp4' )
+
+    # initialize the stabilization
+    VStab = StabilizerHomographyTrajCorrected()
+
+    # loop through the video
+    try:
+        while True:
+            # read the video
+            ret, frame = video.read()
+            if not ret:
+                break
+
+            # calculate the registration
+            H, flag = VStab.stabilize(frame)
+
+            # register accordingly to the output
+            warpedF = cv2.warpPerspective(frame, H, (frame.shape[1],frame.shape[0]))
+            
+            cv2.imshow('Frame', warpedF)
+        
+            # Press Q on keyboard to exit
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+    except KeyboardInterrupt:
+        pass
+    finally:
+        video.release()
